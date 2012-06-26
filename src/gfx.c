@@ -1,7 +1,7 @@
 #include <string.h>
 
 #include <GL/glfw.h>
-#include <SOIL.h>
+#include "soil/SOIL.h"
 
 #include "util.h"
 #include "gfx.h"

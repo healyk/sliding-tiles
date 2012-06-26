@@ -16,12 +16,12 @@ ifeq ($(OS),GNU/Linux)
   CFLAGS +=
   LDFLAGS += -lGL -lGLU -lm -Wl,-rpath,.
 else
-	CFLAGS += -DGLFW_DLL 
-  LDFLAGS += -lsoil -lglfwdll -lopengl32 -lglu32
+	CFLAGS += -DGLFW_DLL -DWIN32
+  LDFLAGS += -lglfwdll -lopengl32 -lglu32 -lmingw32 -mwindows
 endif
 
 # Files
-SRCS = $(wildcard $(SRCDIR)/*.c)
+SRCS = $(wildcard $(SRCDIR)/**/*.c) $(wildcard $(SRCDIR)/*.c)
 OBJS = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS))
 
 # Suffixes
