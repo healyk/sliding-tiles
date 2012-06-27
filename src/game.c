@@ -89,3 +89,43 @@ game_render_board(game_t* game) {
     }
   }
 }
+
+void
+game_on_click(game_t* game, int x, int y) {
+  int iskill = (int)game->skill;
+
+  if(game->play_state == PLAY_STATE_WAIT_FOR_INPUT) {
+    // Translate the x, y to a tile x, y
+    int tile_x = (x / (SCREEN_WIDTH * 1.0f)) * iskill;
+    int tile_y = (y / (SCREEN_HEIGHT * 1.0f)) * iskill;
+
+    // We must find the adjacent NULL sprite tile.
+    point_t adj[4] = {
+      { tile_x - 1, tile_y },
+      { tile_x,     tile_y - 1 },
+      { tile_x + 1, tile_y },
+      { tile_x,     tile_y + 1 }
+    };
+
+    for(int i = 0; i < 4; i++) {
+      point_t test = adj[i];
+
+      // Ignore points that are out of bounds.
+      if(test.x >= 0 && test.x < iskill && test.y >= 0 && test.y < iskill) {
+        game_tile_t* new_tile = game->board + (test.x + (test.y * iskill));
+        if(new_tile->sprite == NULL) {
+          // Swap the tiles.
+          point_t swap_point;
+
+          game_tile_t* current_tile = game->board + (tile_x + (tile_y * iskill));
+          new_tile->sprite = current_tile->sprite;
+          current_tile->sprite = NULL;
+
+          swap_point = new_tile->win_position;
+          new_tile->win_position = current_tile->win_position;
+          current_tile->win_position = swap_point;
+        }
+      }
+    }
+  }
+}

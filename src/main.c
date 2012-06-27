@@ -39,6 +39,15 @@ main_loop(void) {
     game_render_board(game);
     glfwSwapBuffers();
 
+    if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+      int x;
+      int y;
+
+      glfwGetMousePos(&x, &y);
+
+      game_on_click(game, x, y);
+    }
+
     running = !glfwGetKey(GLFW_KEY_ESC) && glfwGetWindowParam(GLFW_OPENED);
   }
 }

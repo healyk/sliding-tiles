@@ -88,4 +88,17 @@ game_end(game_t* game);
 void
 game_render_board(game_t* game);
 
+/**
+   Called when a mouse click occurs.
+
+   @param game
+     The currently running game.
+   @param x
+     The pixel coordinate where the mouse was clicked.
+   @param y
+     The pixel coordinate where the mouse was clicked.
+*/
+void
+game_on_click(game_t* game, int x, int y);
+
 #endif
