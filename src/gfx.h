@@ -50,6 +50,10 @@ typedef struct color {
   uint8_t alpha;
 } color_t;
 
+// Useful constant colors
+extern const color_t COLOR_WHITE;
+extern const color_t COLOR_BLACK;
+
 //==============================================================================
 // Texture
 //==============================================================================
@@ -92,7 +96,10 @@ void texture_delete(texture_t* texture);
    Draws a texture to the screen.
 */
 void 
-gfx_blit(texture_t* texture, rect_t* src_area, rect_t* dest_area);
+gfx_blit(texture_t* texture, 
+         rect_t* src_area, 
+         rect_t* dest_area, 
+         color_t* color);
 
 //==============================================================================
 // Primitives
@@ -157,6 +164,6 @@ sprite_sheet_get_sprite(sprite_sheet_t* sheet, int x, int y);
    Draws a sprite to the screen.
 */
 void
-sprite_render(sprite_t* sprite, rect_t* dest);
+sprite_render(sprite_t* sprite, rect_t* dest, color_t* color);
 
 #endif

@@ -6,12 +6,14 @@
 #include "util.h"
 #include "game.h"
 
+app_data_t app_data;
 texture_t* test_img;
 game_t*    game;
 
 bool
 init_game(void) {
   bool result;
+  texture_t* digits_texture;
 
   log_init("game.log");
   result = gfx_init("Sliding Tile Game", 800, 600);
@@ -25,6 +27,9 @@ init_game(void) {
     result = test_img != NULL;
     game = game_new(SKILL_EASY, test_img);
     // End test code
+
+    digits_texture = texture_load("images/digits.png", true);
+    app_data.digits = sprite_sheet_new(digits_texture, 16, 24);
   }
 
   return result;
@@ -37,7 +42,7 @@ main_loop(void) {
 
   while(running) {
     glClear(GL_COLOR_BUFFER_BIT);
-    game_render_board(game);
+    game_render(&app_data, game);
     glfwSwapBuffers();
 
     if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
@@ -61,6 +66,7 @@ main_loop(void) {
 void
 shutdown_game(void) {
   game_end(game);
+  sprite_sheet_delete(app_data.digits);
   gfx_end_2d();
   gfx_shutdown();
 }

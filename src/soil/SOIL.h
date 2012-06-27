@@ -147,6 +147,8 @@ enum
 	\param force_channels 0-image format, 1-luminous, 2-luminous/alpha, 3-RGB, 4-RGBA
 	\param reuse_texture_ID 0-generate a new texture ID, otherwise reuse the texture ID (overwriting the old texture)
 	\param flags can be any of SOIL_FLAG_POWER_OF_TWO | SOIL_FLAG_MIPMAPS | SOIL_FLAG_TEXTURE_REPEATS | SOIL_FLAG_MULTIPLY_ALPHA | SOIL_FLAG_INVERT_Y | SOIL_FLAG_COMPRESS_TO_DXT | SOIL_FLAG_DDS_LOAD_DIRECT
+  \param texture_width Width of the texture on disk (will not be adjusted for power of two flag)
+  \param texture_height Height of the texture on disk (will not be adjusted for power of two flag)
 	\return 0-failed, otherwise returns the OpenGL texture handle
 **/
 unsigned int
@@ -155,7 +157,9 @@ unsigned int
 		const char *filename,
 		int force_channels,
 		unsigned int reuse_texture_ID,
-		unsigned int flags
+		unsigned int flags,
+    int* texture_width,
+    int* texture_height
 	);
 
 /**

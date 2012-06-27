@@ -6,6 +6,9 @@
 #include "util.h"
 #include "gfx.h"
 
+const color_t COLOR_WHITE = { 255, 255, 255, 255 };
+const color_t COLOR_BLACK = { 0, 0, 0, 255 };
+
 static struct {
   bool inited;
   int  screen_width;
@@ -112,13 +115,15 @@ texture_t*
 texture_load(const char* filename, bool intern) {
   texture_t* texture = NULL;
   GLuint     id;
+  int        width, height;
 
   id = SOIL_load_OGL_texture(filename,
                              SOIL_LOAD_RGBA,
                              SOIL_CREATE_NEW_ID,
                              SOIL_FLAG_POWER_OF_TWO |
                              SOIL_FLAG_TEXTURE_REPEATS |
-                             SOIL_FLAG_COMPRESS_TO_DXT);
+                             SOIL_FLAG_COMPRESS_TO_DXT,
+                             &width, &height);
 
   if(0 == id) {
     logmsg("Unable to load file %s into opengl texture.  Error: %s", filename,
@@ -127,17 +132,8 @@ texture_load(const char* filename, bool intern) {
     texture = new(texture_t);
 
     texture->id = id;
-
-    glBindTexture(GL_TEXTURE_2D, id);
-    glGetTexLevelParameteriv(GL_TEXTURE_2D,
-                             0,
-                             GL_TEXTURE_WIDTH,
-                             &texture->width);
-
-    glGetTexLevelParameteriv(GL_TEXTURE_2D,
-                             0,
-                             GL_TEXTURE_HEIGHT,
-                             &texture->height);
+    texture->width = width;
+    texture->height = height;
 
     if(intern) {
       texture->gfx_tex_next = gfx_context.tex_list_head;
@@ -159,7 +155,11 @@ texture_delete(texture_t* texture) {
 }
 
 static void
-draw_quad(texture_t* texture, rect_t* src_area, rect_t* dest_area) {
+draw_quad(texture_t* texture, 
+          rect_t* src_area, 
+          rect_t* dest_area,
+          color_t* color) 
+{
   float start_x, start_y, end_x, end_y;
 
   start_x = src_area->x / (texture->width * 1.0f);
@@ -177,7 +177,7 @@ draw_quad(texture_t* texture, rect_t* src_area, rect_t* dest_area) {
  
   glBegin(GL_QUADS); 
   {
-    glColor4ub(255, 255, 255, 255);
+    glColor4ub(color->red, color->green, color->blue, color->alpha);
     glTexCoord2f(start_x, start_y);
     glVertex2i(dest_area->x, dest_area->y);
 
@@ -199,8 +199,13 @@ draw_quad(texture_t* texture, rect_t* src_area, rect_t* dest_area) {
 }
 
 void
-gfx_blit(texture_t* texture, rect_t* src_area, rect_t* dest_area) {
+gfx_blit(texture_t* texture, 
+         rect_t* src_area, 
+         rect_t* dest_area,
+         color_t* color) 
+{
   rect_t true_src;
+  color_t true_color = { 255, 255, 255, 255 };
 
   // Check the source
   if(NULL == src_area) {
@@ -211,15 +216,20 @@ gfx_blit(texture_t* texture, rect_t* src_area, rect_t* dest_area) {
 
   // Check the dest
   if(dest_area->width <= 0) {
-    dest_area->width = texture->width;
+    dest_area->width = true_src.width;
   }
 
   if(dest_area->height <= 0) {
-    dest_area->height = texture->height;
+    dest_area->height = true_src.height;
   }
 
+  // Check the color
+  if(color != NULL) {
+    true_color = *color;
+  }    
+
   // Draw the image to a quad.
-  draw_quad(texture, &true_src, dest_area);
+  draw_quad(texture, &true_src, dest_area, &true_color);
 }
 
 //==============================================================================
@@ -297,6 +307,6 @@ sprite_sheet_get_sprite(sprite_sheet_t* sheet, int x, int y) {
 }
 
 void
-sprite_render(sprite_t* sprite, rect_t* dest) {
-  gfx_blit(sprite->texture, &sprite->area, dest);
+sprite_render(sprite_t* sprite, rect_t* dest, color_t* color) {
+  gfx_blit(sprite->texture, &sprite->area, dest, color);
 }

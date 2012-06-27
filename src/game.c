@@ -9,6 +9,10 @@
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
 
+const int TILE_AREA_WIDTH = 800;
+const int TILE_AREA_HEIGHT = (600 - 32);
+const int HEIGHT_OFFSET = 32;
+
 const int SLIDE_VELOCITY = 20;
 
 static void
@@ -53,8 +57,10 @@ game_new(skill_level_t skill, texture_t* texture) {
   game->board_sheet = sprite_sheet_new(texture, sprite_w, sprite_h);
   game->board = new_array(game_tile_t, iskill * iskill);
 
-  game->scale_width =  SCREEN_WIDTH / (texture->width * 1.0f);
-  game->scale_height =  SCREEN_HEIGHT / (texture->height * 1.0f);
+  game->scale_width =  TILE_AREA_WIDTH / (texture->width * 1.0f);
+  game->scale_height =  TILE_AREA_HEIGHT / (texture->height * 1.0f);
+
+  game->last_update_time = game->time_game_begin = glfwGetTime();
 
   generate_board(game);
 
@@ -73,9 +79,14 @@ game_end(game_t* game) {
   delete(game);
 }
 
-void
-game_render_board(game_t* game) {
+static void
+draw_game_board(game_t* game) {
   int iskill = (int)game->skill;
+
+  // Calculate the destination.  We have to scale the individual sprites
+  // to the screen's resolution.
+  int width = (int)ceil(game->scale_width * game->board_sheet->sprite_width);
+  int height = (int)ceil(game->scale_height * game->board_sheet->sprite_height);
   
   for(int x = 0; x < iskill; x++) {
     for(int y = 0; y < iskill; y++) {
@@ -84,31 +95,72 @@ game_render_board(game_t* game) {
 
       if(sprite != NULL) {
         // Stationary sprites
-        if(0 == tile->velocity.x && 0 == tile->velocity.y) {
-          // Calculate the destination.  We have to scale the individual sprites
-          // to the screen's resolution.
-          int width = (int)ceil(game->scale_width * sprite->area.width);
-          int height = (int)ceil(game->scale_height * sprite->area.height);
-          
-          rect_t dest = { x * width, y * height, width, height };
-          sprite_render(sprite, &dest);
+        if(tile->velocity.x != 0 && tile->velocity.y != 0) {
+          rect_t dest = { x * width, 
+                          y * height + HEIGHT_OFFSET, 
+                          width, height };
+          sprite_render(sprite, &dest, NULL);
         }
 
-        // Moving sprites
+      
+        // Moving sprite
         else {
-          // Calculate the destination.  We have to scale the individual sprites
-          // to the screen's resolution.
-          int width = (int)ceil(game->scale_width * sprite->area.width);
-          int height = (int)ceil(game->scale_height * sprite->area.height);
-          
           rect_t dest = { x * width + tile->pixel_offset.x, 
-                          y * height + tile->pixel_offset.y, 
+                          y * height + tile->pixel_offset.y + HEIGHT_OFFSET, 
                           width, height };
-          sprite_render(sprite, &dest);
+          sprite_render(sprite, &dest, NULL);
         }
       }
     }
   }
+}
+
+static void
+draw_game_hud(app_data_t* app, game_t* game) {
+  // Fill the top in with a bloack rectangle.
+  rect_t dest = { 0, 0, SCREEN_WIDTH, HEIGHT_OFFSET };
+  color_t black = { 0, 0, 0, 255 };
+  color_t grey = { 64, 64, 64, 255 };
+  color_t green = { 0, 255, 0, 255 };
+  
+  gfx_draw_rect(&dest, &black, true);
+
+  // Draw the template for the time digits
+  for(int i = 0; i < 5; i++) {
+    sprite_t* sprite;
+    rect_t dest = { 4 + i * app->digits->sprite_width, 4, 0, 0 };
+
+    if(i != 2) {
+      sprite = sprite_sheet_get_sprite(app->digits, 8, 0);
+      sprite_render(sprite, &dest, &grey);
+    } else {
+      sprite = sprite_sheet_get_sprite(app->digits, 10, 0);
+      sprite_render(sprite, &dest, &green);
+    }
+  }
+
+  // Now render the time
+  int time = (int)(game->last_update_time - game->time_game_begin);
+
+  for(int i = 4; i >= 0; i--) {
+    rect_t dest = { 4 + i * app->digits->sprite_width, 4, 0, 0 };
+
+    // skip the colon
+    if(i != 2) {
+      sprite_t* sprite;
+      int digit = time % 10;
+      time /= 10;
+
+      sprite = sprite_sheet_get_sprite(app->digits, digit, 0);
+      sprite_render(sprite, &dest, &green);
+    }
+  }
+}
+
+void
+game_render(app_data_t* app, game_t* game) {
+  draw_game_board(game);
+  draw_game_hud(app, game);
 }
 
 static bool

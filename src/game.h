@@ -76,7 +76,15 @@ typedef struct game {
   float           scale_height;
 
   double          last_update_time;
+  double          time_game_begin;
 } game_t;
+
+/**
+   Holds common application data used through the app.
+*/
+typedef struct app_data {
+  sprite_sheet_t* digits;
+} app_data_t;
 
 /**
    Starts a new game.
@@ -94,7 +102,7 @@ game_end(game_t* game);
    Renders the game board to the screen.
 */
 void
-game_render_board(game_t* game);
+game_render(app_data_t* app, game_t* game);
 
 /**
    Called when a mouse click occurs.
