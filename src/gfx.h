@@ -97,4 +97,52 @@ gfx_blit(texture_t* texture, rect_t* src_area, rect_t* dest_area);
 void
 gfx_draw_rect(rect_t* rect, color_t* color, bool filled);
 
+//==============================================================================
+// Sprites
+//==============================================================================
+
+typedef struct sprite {
+  texture_t* texture;
+  rect_t     area;
+} sprite_t;
+
+typedef struct sprite_sheet {
+  sprite_t* sprites;
+
+  int       sprite_width;
+  int       sprite_height;
+
+  /** Holds the number of sprites wide */
+  int       width;
+  /** Holds the number of sprites high */
+  int       height;
+} sprite_sheet_t;
+
+/**
+   Creates a new sprite sheet from a texture.
+*/
+sprite_sheet_t*
+sprite_sheet_new(texture_t* texture, int sprite_width, int sprite_height);
+
+/**
+   Cleans up a sprite sheet.
+*/
+void
+sprite_sheet_delete(sprite_sheet_t* sheet);
+
+/**
+   Gets an individual sprite from a sprite sheet.
+
+   @return
+     The sprite at (x, y) or NULL if (x, y) is out of bounds.
+*/
+sprite_t*
+sprite_sheet_get_sprite(sprite_sheet_t* sheet, int x, int y);
+
+/**
+   Draws a sprite to the screen.
+*/
+void
+sprite_render(sprite_t* sprite, rect_t* dest);
+
 #endif

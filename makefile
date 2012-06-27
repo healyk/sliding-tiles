@@ -9,7 +9,7 @@ GAME = slidingtiles
 
 # Compiler/flags
 CC = gcc
-CFLAGS = -Wall -std=c99 
+CFLAGS = -Wall -std=c99 -g
 LDFLAGS = 
 
 ifeq ($(OS),GNU/Linux)
@@ -39,7 +39,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) -c $(CFLAGS) -o $@ $^
 
 run:
-	@cd $(BLDDIR) ; ./$(GAME)
+	./$(BLDDIR)/$(GAME)
 
 clean:
 	rm -rf $(BLDDIR)
