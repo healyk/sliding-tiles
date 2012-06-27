@@ -12,7 +12,9 @@
    Models a rectangle.
 */
 typedef struct rect {
+  /** Starting x for the rectangle. */
   int x;
+  /** Starting y for the rectangle. */
   int y;
 
   int width;
@@ -20,14 +22,12 @@ typedef struct rect {
 } rect_t;
 
 /**
-   Models a color.
+   2 dimensional point.
 */
-typedef struct color {
-  uint8_t red;
-  uint8_t green;
-  uint8_t blue;
-  uint8_t alpha;
-} color_t;
+typedef struct point {
+  int x;
+  int y;
+} point_t;
 
 /**
    Simple setter for a rectangle.

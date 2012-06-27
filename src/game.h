@@ -23,15 +23,48 @@ typedef enum skill_level {
 } skill_level_t;
 
 /**
+   Describes the current play state of the game.  This is used to determine 
+   if the game is accepting input, animating, and so forth.
+*/
+typedef enum play_state {
+  /** Indicates that we are currently waiting for player input. */
+  PLAY_STATE_WAIT_FOR_INPUT,
+
+  /** 
+      Indicates the game is moving a tile currently and no input should
+      be accepted. 
+  */
+  PLAY_STATE_MOVING_TILE,
+
+  /**
+     The game has been finished.
+  */
+  PLAY_STATE_GAME_FINISHED
+} play_state_t;
+
+/**
+   Each square in the picture will be cut up into a tile.  This tile has 
+   knowledge of it's picture, where it is to be rendered, and where it 
+   should be for a win condition.
+*/
+typedef struct game_tile {
+  point_t position;
+  point_t win_position;
+
+  sprite_t* sprite;
+} game_tile_t;
+
+/**
    Models a running game.
 */
 typedef struct game {
   skill_level_t   skill;
+  play_state_t    play_state;
 
   sprite_sheet_t* board_sheet;
 
   /** Holds the positions of the sprites on the board. */
-  sprite_t**      board;
+  game_tile_t*    board;
 
   float           scale_width;
   float           scale_height;
