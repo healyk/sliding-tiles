@@ -3,8 +3,13 @@
 #include "game.h"
 #include "util.h"
 
+//==============================================================================
+// Constants
+//==============================================================================
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
+
+const int SLIDE_VELOCITY = 20;
 
 static void
 generate_board(game_t* game) {
@@ -78,15 +83,65 @@ game_render_board(game_t* game) {
       sprite_t* sprite = tile->sprite;
 
       if(sprite != NULL) {
-        // Calculate the destination.  We have to scale the individual sprites
-        // to the screen's resolution.
-        int width = (int)ceil(game->scale_width * sprite->area.width);
-        int height = (int)ceil(game->scale_height * sprite->area.height);
+        // Stationary sprites
+        if(0 == tile->velocity.x && 0 == tile->velocity.y) {
+          // Calculate the destination.  We have to scale the individual sprites
+          // to the screen's resolution.
+          int width = (int)ceil(game->scale_width * sprite->area.width);
+          int height = (int)ceil(game->scale_height * sprite->area.height);
+          
+          rect_t dest = { x * width, y * height, width, height };
+          sprite_render(sprite, &dest);
+        }
 
-        rect_t dest = { x * width, y * height, width, height };
-        sprite_render(sprite, &dest);
+        // Moving sprites
+        else {
+          // Calculate the destination.  We have to scale the individual sprites
+          // to the screen's resolution.
+          int width = (int)ceil(game->scale_width * sprite->area.width);
+          int height = (int)ceil(game->scale_height * sprite->area.height);
+          
+          rect_t dest = { x * width + tile->pixel_offset.x, 
+                          y * height + tile->pixel_offset.y, 
+                          width, height };
+          sprite_render(sprite, &dest);
+        }
       }
     }
+  }
+}
+
+static bool
+is_tile_empty(game_t* game, int x, int y) {
+  game_tile_t* empty_tile;
+
+  empty_tile = game->board + (x + (y * (int)game->skill));
+  return empty_tile->sprite == NULL;
+}
+
+static void
+swap_tiles(game_t* game, 
+           int empty_x, 
+           int empty_y, 
+           int current_x, 
+           int current_y) 
+{
+  game_tile_t* current_tile;
+  game_tile_t* empty_tile;
+  int         iskill = (int)game->skill;
+  
+  empty_tile = game->board + (empty_x + (empty_y * iskill));
+  if(empty_tile->sprite == NULL) {
+    // Swap the tiles.
+    point_t swap_point;
+    current_tile = game->board + (current_x + (current_y * iskill));
+    
+    empty_tile->sprite = current_tile->sprite;
+    current_tile->sprite = NULL;
+    
+    swap_point = empty_tile->win_position;
+    empty_tile->win_position = current_tile->win_position;
+    current_tile->win_position = swap_point;
   }
 }
 
@@ -112,18 +167,70 @@ game_on_click(game_t* game, int x, int y) {
 
       // Ignore points that are out of bounds.
       if(test.x >= 0 && test.x < iskill && test.y >= 0 && test.y < iskill) {
-        game_tile_t* new_tile = game->board + (test.x + (test.y * iskill));
-        if(new_tile->sprite == NULL) {
-          // Swap the tiles.
-          point_t swap_point;
+        if(is_tile_empty(game, test.x, test.y)) {
+          game_tile_t* current_tile = 
+            game->board + (tile_x + (iskill * tile_y));
+          
+          current_tile->velocity.x = (test.x - tile_x) * SLIDE_VELOCITY;
+          current_tile->velocity.y = (test.y - tile_y) * SLIDE_VELOCITY;
 
-          game_tile_t* current_tile = game->board + (tile_x + (tile_y * iskill));
-          new_tile->sprite = current_tile->sprite;
-          current_tile->sprite = NULL;
+          game->play_state = PLAY_STATE_MOVING_TILE;
+        }
+      }
+    }
+  }
+}
 
-          swap_point = new_tile->win_position;
-          new_tile->win_position = current_tile->win_position;
-          current_tile->win_position = swap_point;
+static void
+reset_tile(game_tile_t* tile) {
+  point_t reset = { 0, 0 };
+
+  tile->velocity = reset;
+  tile->pixel_offset = reset;
+}
+
+void
+game_update(game_t* game) {
+  for(int x = 0; x < game->skill; x++) {
+    for(int y = 0; y < game->skill; y++) {
+      game_tile_t* tile = game->board + (x + (y * game->skill));
+
+      if(tile->velocity.x != 0) {
+        tile->pixel_offset.x += tile->velocity.x;
+
+        // Check to see if the tile has reached it's destination.
+        if(abs(tile->pixel_offset.x) >= 
+           (tile->sprite->area.width * game->scale_width))
+        {
+          int xmod = tile->velocity.x / abs(tile->velocity.x);
+
+          swap_tiles(game, 
+                     tile->position.x + xmod,
+                     tile->position.y,
+                     tile->position.x,
+                     tile->position.y);
+
+          reset_tile(tile);
+          game->play_state = PLAY_STATE_WAIT_FOR_INPUT;
+        }
+      }
+
+      if(tile->velocity.y != 0) {
+        tile->pixel_offset.y += tile->velocity.y;
+        
+        if(abs(tile->pixel_offset.y) >= 
+           (tile->sprite->area.height * game->scale_height)) 
+        {
+          int ymod = tile->velocity.y / abs(tile->velocity.y);
+          
+          swap_tiles(game, 
+                     tile->position.x,
+                     tile->position.y + ymod,
+                     tile->position.x,
+                     tile->position.y);
+
+          reset_tile(tile);
+          game->play_state = PLAY_STATE_WAIT_FOR_INPUT;
         }
       }
     }

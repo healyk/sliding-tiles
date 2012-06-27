@@ -33,6 +33,7 @@ init_game(void) {
 void
 main_loop(void) {
   bool running = true;
+  double current_time = 0.0;
 
   while(running) {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -40,12 +41,17 @@ main_loop(void) {
     glfwSwapBuffers();
 
     if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-      int x;
-      int y;
+      int x, y;
 
       glfwGetMousePos(&x, &y);
-
       game_on_click(game, x, y);
+    }
+
+    current_time = glfwGetTime();
+
+    if(current_time - game->last_update_time >= (32.0 / 1000.0)) {
+      game->last_update_time = current_time;
+      game_update(game);
     }
 
     running = !glfwGetKey(GLFW_KEY_ESC) && glfwGetWindowParam(GLFW_OPENED);

@@ -51,6 +51,9 @@ typedef struct game_tile {
   point_t position;
   point_t win_position;
 
+  point_t velocity;
+  point_t pixel_offset;
+
   sprite_t* sprite;
 } game_tile_t;
 
@@ -61,13 +64,18 @@ typedef struct game {
   skill_level_t   skill;
   play_state_t    play_state;
 
+  /** Holds the sprite sheet used when drawing the board pieces. */
   sprite_sheet_t* board_sheet;
 
   /** Holds the positions of the sprites on the board. */
   game_tile_t*    board;
 
+  /** Used when rendering the sprites to the screen to scale them properly. */
   float           scale_width;
+  /** Used when rendering the sprites to the screen to scale them properly. */
   float           scale_height;
+
+  double          last_update_time;
 } game_t;
 
 /**
@@ -100,5 +108,11 @@ game_render_board(game_t* game);
 */
 void
 game_on_click(game_t* game, int x, int y);
+
+/**
+   Needs to be called to update the current game state/animation.
+*/
+void
+game_update(game_t* game);
 
 #endif
