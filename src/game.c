@@ -181,12 +181,58 @@ game_on_click(game_t* game, int x, int y) {
   }
 }
 
+/**
+   Resets the properties of a moving tile.
+*/
 static void
-reset_tile(game_tile_t* tile) {
+reset_moving_tile_to_stationary(game_tile_t* tile) {
   point_t reset = { 0, 0 };
 
   tile->velocity = reset;
   tile->pixel_offset = reset;
+}
+
+/**
+   Performs the tile's movement calculations.
+
+   @param game
+     Current game instance.
+   @param tile
+     Moving tile.  The tile's velocity should not be zero.
+*/
+static void
+move_tile_calculation(game_t* game, game_tile_t* tile) {
+  tile->pixel_offset.x += tile->velocity.x;
+  tile->pixel_offset.y += tile->velocity.y;
+  
+  // Check to see if the tile has reached it's destination.
+  if(abs(tile->pixel_offset.x) >= 
+     (tile->sprite->area.width * game->scale_width))
+  {
+    int xmod = tile->velocity.x / abs(tile->velocity.x);
+    
+    swap_tiles(game, 
+               tile->position.x + xmod,
+               tile->position.y,
+               tile->position.x,
+               tile->position.y);
+    
+    reset_moving_tile_to_stationary(tile);
+    game->play_state = PLAY_STATE_WAIT_FOR_INPUT;
+  } else if(abs(tile->pixel_offset.y) >= 
+            (tile->sprite->area.height * game->scale_height)) 
+  {
+    int ymod = tile->velocity.y / abs(tile->velocity.y);
+    
+    swap_tiles(game, 
+               tile->position.x,
+               tile->position.y + ymod,
+               tile->position.x,
+               tile->position.y);
+    
+    reset_moving_tile_to_stationary(tile);
+    game->play_state = PLAY_STATE_WAIT_FOR_INPUT;
+  }
 }
 
 void
@@ -195,43 +241,8 @@ game_update(game_t* game) {
     for(int y = 0; y < game->skill; y++) {
       game_tile_t* tile = game->board + (x + (y * game->skill));
 
-      if(tile->velocity.x != 0) {
-        tile->pixel_offset.x += tile->velocity.x;
-
-        // Check to see if the tile has reached it's destination.
-        if(abs(tile->pixel_offset.x) >= 
-           (tile->sprite->area.width * game->scale_width))
-        {
-          int xmod = tile->velocity.x / abs(tile->velocity.x);
-
-          swap_tiles(game, 
-                     tile->position.x + xmod,
-                     tile->position.y,
-                     tile->position.x,
-                     tile->position.y);
-
-          reset_tile(tile);
-          game->play_state = PLAY_STATE_WAIT_FOR_INPUT;
-        }
-      }
-
-      if(tile->velocity.y != 0) {
-        tile->pixel_offset.y += tile->velocity.y;
-        
-        if(abs(tile->pixel_offset.y) >= 
-           (tile->sprite->area.height * game->scale_height)) 
-        {
-          int ymod = tile->velocity.y / abs(tile->velocity.y);
-          
-          swap_tiles(game, 
-                     tile->position.x,
-                     tile->position.y + ymod,
-                     tile->position.x,
-                     tile->position.y);
-
-          reset_tile(tile);
-          game->play_state = PLAY_STATE_WAIT_FOR_INPUT;
-        }
+      if(tile->velocity.x != 0 || tile->velocity.y != 0) {
+        move_tile_calculation(game, tile);
       }
     }
   }
