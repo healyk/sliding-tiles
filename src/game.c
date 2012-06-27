@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdlib.h>
 
 #include "game.h"
 #include "util.h"
@@ -116,14 +117,9 @@ draw_game_board(game_t* game) {
 }
 
 static void
-draw_game_hud(app_data_t* app, game_t* game) {
-  // Fill the top in with a bloack rectangle.
-  rect_t dest = { 0, 0, SCREEN_WIDTH, HEIGHT_OFFSET };
-  color_t black = { 0, 0, 0, 255 };
+draw_clock_background(app_data_t* app, game_t* game) {
   color_t grey = { 64, 64, 64, 255 };
   color_t green = { 0, 255, 0, 255 };
-  
-  gfx_draw_rect(&dest, &black, true);
 
   // Draw the template for the time digits
   for(int i = 0; i < 5; i++) {
@@ -138,20 +134,52 @@ draw_game_hud(app_data_t* app, game_t* game) {
       sprite_render(sprite, &dest, &green);
     }
   }
+}
+
+static void
+time_to_digits_array(game_t* game, int* arr) {
+  int time = (int)(game->last_update_time - game->time_game_begin);
+
+  int seconds = time % 60;
+  int minutes = time / 60;
+
+  int result[4];
+
+  result[3] = seconds % 10; seconds /= 10;
+  result[2] = seconds % 10; seconds /= 10;
+  result[1] = minutes % 10; minutes /= 10;
+  result[0] = minutes % 10; minutes /= 10;
+
+  memcpy(arr, result, sizeof(int) * 4);
+}
+
+static void
+draw_game_hud(app_data_t* app, game_t* game) {
+  // Fill the top in with a bloack rectangle.
+  rect_t dest = { 0, 0, SCREEN_WIDTH, HEIGHT_OFFSET };
+  color_t black = { 0, 0, 0, 255 };
+  color_t green = { 0, 255, 0, 255 };
+ 
+  gfx_draw_rect(&dest, &black, true);
+  draw_clock_background(app, game);
 
   // Now render the time
-  int time = (int)(game->last_update_time - game->time_game_begin);
+  int time_digits[4];
+  time_to_digits_array(game, time_digits);
 
   for(int i = 4; i >= 0; i--) {
     rect_t dest = { 4 + i * app->digits->sprite_width, 4, 0, 0 };
 
     // skip the colon
-    if(i != 2) {
+    if(i > 2) {
       sprite_t* sprite;
-      int digit = time % 10;
-      time /= 10;
 
-      sprite = sprite_sheet_get_sprite(app->digits, digit, 0);
+      sprite = sprite_sheet_get_sprite(app->digits, time_digits[i - 1], 0);
+      sprite_render(sprite, &dest, &green);
+    } else if(i < 2) {
+      sprite_t* sprite;
+
+      sprite = sprite_sheet_get_sprite(app->digits, time_digits[i], 0);
       sprite_render(sprite, &dest, &green);
     }
   }
