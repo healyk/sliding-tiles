@@ -58,4 +58,19 @@ void* _new(size_t element_size,
 #define delete(var) \
   (_delete(var))
 
+/**
+   Generates a random integer in the range [min, max).
+*/
+int rand_int(int min, int max);
+
+/**
+   Returns the minimum integer between two numbers.
+*/
+int min(int a, int b);
+
+/**
+   Returns the maximum integer between two numbers.
+*/
+int max(int a, int b);
+
 #endif

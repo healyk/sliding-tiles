@@ -1,5 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
+#include <math.h>
 
 #include "game.h"
 #include "util.h"
@@ -14,7 +16,23 @@ const int TILE_AREA_WIDTH = 800;
 const int TILE_AREA_HEIGHT = (600 - 32);
 const int HEIGHT_OFFSET = 32;
 
+/** 
+    This is how fast (in pixels per game loop iteration) the tiles move
+    when they slide. 
+*/
 const int SLIDE_VELOCITY = 20;
+
+/**
+   Number of times that the board tiles will be moved around before it
+   is presented to the player in a new game.
+*/
+const int BOARD_RANDOMIZATION_ITERATIONS = 256;
+
+//==============================================================================
+// Prototypes
+//==============================================================================
+static void swap_tiles(game_t* game, int empty_x, int empty_y, int current_x, 
+                       int current_y);
 
 static void
 generate_board(game_t* game) {
@@ -41,6 +59,33 @@ generate_board(game_t* game) {
   }
 }
 
+/**
+   Pre-game randomization of the tiles on the board.  The board is always
+   valid because this function simulates board swaps instead of just
+   randomly exchanging tiles.
+*/
+static void
+randomize_board_tiles(game_t* game) {
+  point_t empty = { 0, 0 };
+
+  for(int i = 0; i < BOARD_RANDOMIZATION_ITERATIONS; i++) {
+    // Pick a random adjacent tile to swap with the current empty one
+    point_t adjacents[] = {
+      { max(empty.x - 1, 0),               empty.y },
+      { min(empty.x + 1, game->skill - 1), empty.y },
+      { empty.x, max(empty.y - 1, 0) },
+      { empty.x, min(empty.y + 1, game->skill - 1) }
+    };
+
+    int index = rand_int(0, 4);
+    
+    // Swap it
+    point_t swap_point = adjacents[index];
+    swap_tiles(game, empty.x, empty.y, swap_point.x, swap_point.y);
+    empty = swap_point;
+  }
+}
+
 game_t*
 game_new(skill_level_t skill, texture_t* texture) {
   game_t* game = new(game_t);
@@ -64,6 +109,7 @@ game_new(skill_level_t skill, texture_t* texture) {
   game->last_update_time = game->time_game_begin = glfwGetTime();
 
   generate_board(game);
+  randomize_board_tiles(game);
 
   return game;
 }
@@ -161,6 +207,7 @@ draw_game_hud(app_data_t* app, game_t* game) {
   color_t green = { 0, 255, 0, 255 };
  
   gfx_draw_rect(&dest, &black, true);
+
   draw_clock_background(app, game);
 
   // Now render the time
@@ -169,16 +216,13 @@ draw_game_hud(app_data_t* app, game_t* game) {
 
   for(int i = 4; i >= 0; i--) {
     rect_t dest = { 4 + i * app->digits->sprite_width, 4, 0, 0 };
+    sprite_t* sprite;
 
     // skip the colon
     if(i > 2) {
-      sprite_t* sprite;
-
       sprite = sprite_sheet_get_sprite(app->digits, time_digits[i - 1], 0);
       sprite_render(sprite, &dest, &green);
     } else if(i < 2) {
-      sprite_t* sprite;
-
       sprite = sprite_sheet_get_sprite(app->digits, time_digits[i], 0);
       sprite_render(sprite, &dest, &green);
     }

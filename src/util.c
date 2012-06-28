@@ -60,3 +60,15 @@ _new(size_t element_size, size_t element_count, const char* typename) {
 
   return pointer;
 }
+
+int rand_int(int min, int max) {
+  return (rand() % (max - min)) + min;
+}
+
+int min(int a, int b) { 
+  return a < b ? a : b; 
+}
+
+int max(int a, int b) {
+  return a > b ? a : b; 
+}

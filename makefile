@@ -13,8 +13,8 @@ CFLAGS = -Wall -std=c99 -g
 LDFLAGS = 
 
 ifeq ($(OS),GNU/Linux)
-  CFLAGS +=
-  LDFLAGS += -lGL -lGLU -lm -Wl,-rpath,.
+  CFLAGS += -DUNIX
+  LDFLAGS += lglfw -lGL -lGLU -lm -Wl,-rpath,.
 else
 	CFLAGS += -DGLFW_DLL -DWIN32
   LDFLAGS += -lglfwdll -lopengl32 -lglu32 -lmingw32 -mwindows
