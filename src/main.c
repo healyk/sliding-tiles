@@ -19,7 +19,7 @@ init_game(void) {
   result = gfx_init("Sliding Tile Game", 800, 600);
 
   if(result) {
-    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     gfx_begin_2d();
     // Begin test code
     test_img = texture_load("images/landscape.jpg", true);
@@ -28,7 +28,7 @@ init_game(void) {
     game = game_new(SKILL_EASY, test_img);
     // End test code
 
-    digits_texture = texture_load("images/digits.png", true);
+    digits_texture = texture_load("data/digits.png", true);
     app_data.digits = sprite_sheet_new(digits_texture, 16, 24);
   }
 

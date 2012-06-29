@@ -202,12 +202,8 @@ time_to_digits_array(game_t* game, int* arr) {
 static void
 draw_game_hud(app_data_t* app, game_t* game) {
   // Fill the top in with a bloack rectangle.
-  rect_t dest = { 0, 0, SCREEN_WIDTH, HEIGHT_OFFSET };
-  color_t black = { 0, 0, 0, 255 };
   color_t green = { 0, 255, 0, 255 };
  
-  gfx_draw_rect(&dest, &black, true);
-
   draw_clock_background(app, game);
 
   // Now render the time
