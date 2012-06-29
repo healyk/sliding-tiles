@@ -78,8 +78,8 @@ typedef struct game {
   double          last_update_time;
   double          time_game_begin;
 
-  /** Holds the time rendered after the win condition has been met. */
-  double          win_time;
+  /** Holds the amount of time that has progressed since the game started. */
+  double          play_time;
 
   int             move_count;
 } game_t;
@@ -126,8 +126,11 @@ game_on_click(game_t* game, int x, int y);
 
 /**
    Needs to be called to update the current game state/animation.
+
+   @param delta
+     Amount of time between this call and the last call.
 */
 void
-game_update(game_t* game);
+game_update(game_t* game, double delta);
 
 #endif

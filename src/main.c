@@ -57,8 +57,8 @@ main_loop(void) {
     current_time = glfwGetTime();
 
     if(current_time - game->last_update_time >= (32.0 / 1000.0)) {
+      game_update(game, current_time - game->last_update_time);
       game->last_update_time = current_time;
-      game_update(game);
     }
 
     running = !glfwGetKey(GLFW_KEY_ESC) && glfwGetWindowParam(GLFW_OPENED);

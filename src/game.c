@@ -225,11 +225,7 @@ draw_current_time(app_data_t* app, game_t* game) {
   sprite_t* colon;
   rect_t    dest = { 48 + TIME_WORD_WIDTH + 4, 4, 0, 0 };
 
-  if(game->play_state != PLAY_STATE_GAME_FINISHED) {
-    time = (int)(game->last_update_time - game->time_game_begin);
-  } else {
-    time = (int)(game->win_time - game->time_game_begin);
-  }
+  time = (int)(game->play_time - game->time_game_begin);
 
   seconds = time % 60;
   minutes = time / 60;
@@ -326,7 +322,6 @@ check_for_win(game_t* game) {
   }
 
   if(is_win) {
-    game->win_time = game->last_update_time;
     game->play_state = PLAY_STATE_GAME_FINISHED;
   }
   
@@ -429,13 +424,17 @@ move_tile_calculation(game_t* game, game_tile_t* tile) {
 }
 
 void
-game_update(game_t* game) {
-  for(int x = 0; x < game->skill; x++) {
-    for(int y = 0; y < game->skill; y++) {
-      game_tile_t* tile = get_game_tile(game, x, y);
-
-      if(tile->velocity.x != 0 || tile->velocity.y != 0) {
-        move_tile_calculation(game, tile);
+game_update(game_t* game, double delta) {
+  if(game->play_state != PLAY_STATE_GAME_FINISHED) {
+    game->play_time += delta;
+    
+    for(int x = 0; x < game->skill; x++) {
+      for(int y = 0; y < game->skill; y++) {
+        game_tile_t* tile = get_game_tile(game, x, y);
+        
+        if(tile->velocity.x != 0 || tile->velocity.y != 0) {
+          move_tile_calculation(game, tile);
+        }
       }
     }
   }
