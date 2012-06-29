@@ -77,6 +77,7 @@ typedef struct game {
 
   double          last_update_time;
   double          time_game_begin;
+  double          win_time;
 } game_t;
 
 /**

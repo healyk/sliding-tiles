@@ -33,6 +33,7 @@ const int BOARD_RANDOMIZATION_ITERATIONS = 256;
 //==============================================================================
 static void swap_tiles(game_t* game, int empty_x, int empty_y, int current_x, 
                        int current_y);
+static game_tile_t* get_game_tile(game_t* game, int x, int y);
 
 static void
 generate_board(game_t* game) {
@@ -40,7 +41,7 @@ generate_board(game_t* game) {
 
   for(int x = 0; x < iskill; x++) {
     for(int y = 0; y < iskill; y++) {
-      game_tile_t* tile = game->board + (x + (y * iskill));
+      game_tile_t* tile = get_game_tile(game, x, y);
 
       // Speical case (0, 0), it's the empty area
       if(0 == x && 0 == y) {
@@ -128,16 +129,14 @@ game_end(game_t* game) {
 
 static void
 draw_game_board(game_t* game) {
-  int iskill = (int)game->skill;
-
   // Calculate the destination.  We have to scale the individual sprites
   // to the screen's resolution.
   int width = (int)ceil(game->scale_width * game->board_sheet->sprite_width);
   int height = (int)ceil(game->scale_height * game->board_sheet->sprite_height);
   
-  for(int x = 0; x < iskill; x++) {
-    for(int y = 0; y < iskill; y++) {
-      game_tile_t* tile = game->board + (x + (y * iskill));
+  for(int x = 0; x < game->skill; x++) {
+    for(int y = 0; y < game->skill; y++) {
+      game_tile_t* tile = get_game_tile(game, x, y);
       sprite_t* sprite = tile->sprite;
 
       if(sprite != NULL) {
@@ -184,12 +183,19 @@ draw_clock_background(app_data_t* app, game_t* game) {
 
 static void
 time_to_digits_array(game_t* game, int* arr) {
-  int time = (int)(game->last_update_time - game->time_game_begin);
-
-  int seconds = time % 60;
-  int minutes = time / 60;
-
+  int seconds;
+  int minutes;
   int result[4];
+  int time;
+
+  if(game->play_state != PLAY_STATE_GAME_FINISHED) {
+    time = (int)(game->last_update_time - game->time_game_begin);
+  } else {
+    time = (int)(game->win_time - game->time_game_begin);
+  }
+
+  seconds = time % 60;
+  minutes = time / 60;
 
   result[3] = seconds % 10; seconds /= 10;
   result[2] = seconds % 10; seconds /= 10;
@@ -248,13 +254,12 @@ swap_tiles(game_t* game,
 {
   game_tile_t* current_tile;
   game_tile_t* empty_tile;
-  int         iskill = (int)game->skill;
   
-  empty_tile = game->board + (empty_x + (empty_y * iskill));
+  empty_tile = get_game_tile(game, empty_x, empty_y);
   if(empty_tile->sprite == NULL) {
     // Swap the tiles.
     point_t swap_point;
-    current_tile = game->board + (current_x + (current_y * iskill));
+    current_tile = get_game_tile(game, current_x, current_y);
     
     empty_tile->sprite = current_tile->sprite;
     current_tile->sprite = NULL;
@@ -265,14 +270,39 @@ swap_tiles(game_t* game,
   }
 }
 
+static game_tile_t*
+get_game_tile(game_t* game, int x, int y) {
+  return game->board + (x + (y * game->skill));
+}
+
+static bool
+check_for_win(game_t* game) {
+  bool is_win = true;
+
+  for(int x = 0; x < game->skill && is_win; x++) {
+    for(int y = 0; y < game->skill && is_win; y++) {
+      game_tile_t* tile = get_game_tile(game, x, y);
+
+      if(tile->win_position.x != x || tile->win_position.y != y) {
+        is_win = false;
+      }
+    }
+  }
+
+  if(is_win) {
+    game->win_time = game->last_update_time;
+    game->play_state = PLAY_STATE_GAME_FINISHED;
+  }
+  
+  return is_win;
+}
+
 void
 game_on_click(game_t* game, int x, int y) {
-  int iskill = (int)game->skill;
-
   if(game->play_state == PLAY_STATE_WAIT_FOR_INPUT) {
     // Translate the x, y to a tile x, y
-    int tile_x = (x / (SCREEN_WIDTH * 1.0f)) * iskill;
-    int tile_y = (y / (SCREEN_HEIGHT * 1.0f)) * iskill;
+    int tile_x = (x / (SCREEN_WIDTH * 1.0f)) * game->skill;
+    int tile_y = (y / (SCREEN_HEIGHT * 1.0f)) * game->skill;
 
     // We must find the adjacent NULL sprite tile.
     point_t adj[4] = {
@@ -286,10 +316,11 @@ game_on_click(game_t* game, int x, int y) {
       point_t test = adj[i];
 
       // Ignore points that are out of bounds.
-      if(test.x >= 0 && test.x < iskill && test.y >= 0 && test.y < iskill) {
+      if(test.x >= 0 && test.x < game->skill && 
+         test.y >= 0 && test.y < game->skill) 
+      {
         if(is_tile_empty(game, test.x, test.y)) {
-          game_tile_t* current_tile = 
-            game->board + (tile_x + (iskill * tile_y));
+          game_tile_t* current_tile = get_game_tile(game, tile_x, tile_y);
           
           current_tile->velocity.x = (test.x - tile_x) * SLIDE_VELOCITY;
           current_tile->velocity.y = (test.y - tile_y) * SLIDE_VELOCITY;
@@ -338,7 +369,10 @@ move_tile_calculation(game_t* game, game_tile_t* tile) {
                tile->position.y);
     
     reset_moving_tile_to_stationary(tile);
-    game->play_state = PLAY_STATE_WAIT_FOR_INPUT;
+    
+    if(!check_for_win(game)) {
+      game->play_state = PLAY_STATE_WAIT_FOR_INPUT;
+    }
   } else if(abs(tile->pixel_offset.y) >= 
             (tile->sprite->area.height * game->scale_height)) 
   {
@@ -351,7 +385,9 @@ move_tile_calculation(game_t* game, game_tile_t* tile) {
                tile->position.y);
     
     reset_moving_tile_to_stationary(tile);
-    game->play_state = PLAY_STATE_WAIT_FOR_INPUT;
+    if(!check_for_win(game)) {
+      game->play_state = PLAY_STATE_WAIT_FOR_INPUT;
+    }
   }
 }
 
@@ -359,7 +395,7 @@ void
 game_update(game_t* game) {
   for(int x = 0; x < game->skill; x++) {
     for(int y = 0; y < game->skill; y++) {
-      game_tile_t* tile = game->board + (x + (y * game->skill));
+      game_tile_t* tile = get_game_tile(game, x, y);
 
       if(tile->velocity.x != 0 || tile->velocity.y != 0) {
         move_tile_calculation(game, tile);
@@ -367,3 +403,4 @@ game_update(game_t* game) {
     }
   }
 }
+
