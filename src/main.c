@@ -30,6 +30,8 @@ init_game(void) {
 
     digits_texture = texture_load("data/digits.png", true);
     app_data.digits = sprite_sheet_new(digits_texture, 16, 24);
+
+    app_data.hud_words = texture_load("data/hud-words.png", true);
   }
 
   return result;

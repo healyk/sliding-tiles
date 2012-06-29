@@ -77,7 +77,11 @@ typedef struct game {
 
   double          last_update_time;
   double          time_game_begin;
+
+  /** Holds the time rendered after the win condition has been met. */
   double          win_time;
+
+  int             move_count;
 } game_t;
 
 /**
@@ -85,6 +89,8 @@ typedef struct game {
 */
 typedef struct app_data {
   sprite_sheet_t* digits;
+  
+  texture_t*      hud_words;
 } app_data_t;
 
 /**

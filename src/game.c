@@ -16,6 +16,10 @@ const int TILE_AREA_WIDTH = 800;
 const int TILE_AREA_HEIGHT = (600 - 32);
 const int HEIGHT_OFFSET = 32;
 
+const int TIME_WORD_WIDTH = 64;
+const int COUNT_WORD_WIDTH = 80;
+const int COUNT_OFFSET = 256;
+
 /** 
     This is how fast (in pixels per game loop iteration) the tiles move
     when they slide. 
@@ -127,6 +131,10 @@ game_end(game_t* game) {
   delete(game);
 }
 
+//==============================================================================
+// Game Rendering
+//==============================================================================
+
 static void
 draw_game_board(game_t* game) {
   // Calculate the destination.  We have to scale the individual sprites
@@ -161,32 +169,61 @@ draw_game_board(game_t* game) {
   }
 }
 
+/**
+   Draws a given number of digits.  This will draw the number and pad any
+   empty spaces with zeros.
+   @param start_x
+     Where to start drawing on the hud, x coordinate.
+   @param num
+     Number to draw.
+   @param count
+     Number of total digits to draw (filled in with zeros if num isn't this
+     many digits).
+   @param color
+     Color to draw it in.
+*/
 static void
-draw_clock_background(app_data_t* app, game_t* game) {
-  color_t grey = { 64, 64, 64, 255 };
-  color_t green = { 0, 255, 0, 255 };
-
-  // Draw the template for the time digits
-  for(int i = 0; i < 5; i++) {
+draw_digits(app_data_t* app, game_t* game, int start_x, int num, int count,
+            color_t* color) 
+{
+  for(int i = count - 1; i >= 0; i--) {
     sprite_t* sprite;
-    rect_t dest = { 4 + i * app->digits->sprite_width, 4, 0, 0 };
+    rect_t dest = { start_x + i * app->digits->sprite_width, 4, 
+                    0, 0 };
 
-    if(i != 2) {
-      sprite = sprite_sheet_get_sprite(app->digits, 8, 0);
-      sprite_render(sprite, &dest, &grey);
-    } else {
-      sprite = sprite_sheet_get_sprite(app->digits, 10, 0);
-      sprite_render(sprite, &dest, &green);
-    }
+    sprite = sprite_sheet_get_sprite(app->digits, num % 10, 0);
+    sprite_render(sprite, &dest, color);
+
+    num /= 10;
   }
 }
 
 static void
-time_to_digits_array(game_t* game, int* arr) {
-  int seconds;
-  int minutes;
-  int result[4];
-  int time;
+draw_hud_words(app_data_t* app) {
+  rect_t dest = { 0, 4, 0, 0 };
+  rect_t src = { 0, 0, TIME_WORD_WIDTH, 24 };
+  color_t green = { 0, 255, 0, 255 };
+
+  // Draw time
+  gfx_blit(app->hud_words, &src, &dest, &green);
+
+  // Draw 'count'
+  dest.x = COUNT_OFFSET;
+  src.x = TIME_WORD_WIDTH;
+  src.width = COUNT_WORD_WIDTH;
+
+  gfx_blit(app->hud_words, &src, &dest, &green);
+}
+
+static void
+draw_current_time(app_data_t* app, game_t* game) {
+  color_t   green = { 0, 255, 0, 255 };
+  color_t   gray  = { 64, 64, 64, 255 };
+  int       time;
+  int       seconds;
+  int       minutes;
+  sprite_t* colon;
+  rect_t    dest = { 48 + TIME_WORD_WIDTH + 4, 4, 0, 0 };
 
   if(game->play_state != PLAY_STATE_GAME_FINISHED) {
     time = (int)(game->last_update_time - game->time_game_begin);
@@ -197,38 +234,33 @@ time_to_digits_array(game_t* game, int* arr) {
   seconds = time % 60;
   minutes = time / 60;
 
-  result[3] = seconds % 10; seconds /= 10;
-  result[2] = seconds % 10; seconds /= 10;
-  result[1] = minutes % 10; minutes /= 10;
-  result[0] = minutes % 10; minutes /= 10;
+  draw_digits(app, game, 16 + TIME_WORD_WIDTH, 88, 2, &gray);
+  draw_digits(app, game, 16 + TIME_WORD_WIDTH, minutes, 2, &green);
+  
+  // Draw colon
+  colon = sprite_sheet_get_sprite(app->digits, 10, 0);
+  sprite_render(colon, &dest, &green);
 
-  memcpy(arr, result, sizeof(int) * 4);
+  draw_digits(app, game, 64 + TIME_WORD_WIDTH, 88, 2, &gray);
+  draw_digits(app, game, 64 + TIME_WORD_WIDTH, seconds, 2, &green);
+}
+
+static void
+draw_current_count(app_data_t* app, game_t* game) {
+  color_t   green = { 0, 255, 0, 255 };
+  color_t   gray  = { 64, 64, 64, 255 };
+  int       offset = 16 + COUNT_WORD_WIDTH + COUNT_OFFSET;
+
+  draw_digits(app, game, offset, 88888, 5, &gray);
+  draw_digits(app, game, offset, game->move_count, 5, &green);
 }
 
 static void
 draw_game_hud(app_data_t* app, game_t* game) {
-  // Fill the top in with a bloack rectangle.
-  color_t green = { 0, 255, 0, 255 };
- 
-  draw_clock_background(app, game);
+  draw_hud_words(app);
 
-  // Now render the time
-  int time_digits[4];
-  time_to_digits_array(game, time_digits);
-
-  for(int i = 4; i >= 0; i--) {
-    rect_t dest = { 4 + i * app->digits->sprite_width, 4, 0, 0 };
-    sprite_t* sprite;
-
-    // skip the colon
-    if(i > 2) {
-      sprite = sprite_sheet_get_sprite(app->digits, time_digits[i - 1], 0);
-      sprite_render(sprite, &dest, &green);
-    } else if(i < 2) {
-      sprite = sprite_sheet_get_sprite(app->digits, time_digits[i], 0);
-      sprite_render(sprite, &dest, &green);
-    }
-  }
+  draw_current_time(app, game);
+  draw_current_count(app, game);
 }
 
 void
@@ -236,6 +268,10 @@ game_render(app_data_t* app, game_t* game) {
   draw_game_board(game);
   draw_game_hud(app, game);
 }
+
+//==============================================================================
+// Game Movement/Win
+//==============================================================================
 
 static bool
 is_tile_empty(game_t* game, int x, int y) {
@@ -353,6 +389,7 @@ reset_moving_tile_to_stationary(game_tile_t* tile) {
 */
 static void
 move_tile_calculation(game_t* game, game_tile_t* tile) {
+  bool tile_adjusted = false;
   tile->pixel_offset.x += tile->velocity.x;
   tile->pixel_offset.y += tile->velocity.y;
   
@@ -367,12 +404,7 @@ move_tile_calculation(game_t* game, game_tile_t* tile) {
                tile->position.y,
                tile->position.x,
                tile->position.y);
-    
-    reset_moving_tile_to_stationary(tile);
-    
-    if(!check_for_win(game)) {
-      game->play_state = PLAY_STATE_WAIT_FOR_INPUT;
-    }
+    tile_adjusted = true;
   } else if(abs(tile->pixel_offset.y) >= 
             (tile->sprite->area.height * game->scale_height)) 
   {
@@ -383,8 +415,13 @@ move_tile_calculation(game_t* game, game_tile_t* tile) {
                tile->position.y + ymod,
                tile->position.x,
                tile->position.y);
-    
+    tile_adjusted = true;
+  }
+
+  if(tile_adjusted) {
     reset_moving_tile_to_stationary(tile);
+    game->move_count++;
+
     if(!check_for_win(game)) {
       game->play_state = PLAY_STATE_WAIT_FOR_INPUT;
     }
@@ -403,4 +440,3 @@ game_update(game_t* game) {
     }
   }
 }
-
