@@ -31,6 +31,7 @@ gfx_init(const char* title, int width, int height) {
       logmsg("Unable to initialize graphics systems.");
       result = false;
     } else {
+      glfwOpenWindowHint(GLFW_WINDOW_NO_RESIZE, GL_TRUE);
       result = glfwOpenWindow(width, height, 8, 8, 8, 8, 8, 8, GLFW_WINDOW)
         == GL_TRUE;
       
