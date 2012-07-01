@@ -166,4 +166,42 @@ sprite_sheet_get_sprite(sprite_sheet_t* sheet, int x, int y);
 void
 sprite_render(sprite_t* sprite, rect_t* dest, color_t* color);
 
+//==============================================================================
+// Fonts
+//==============================================================================
+
+/**
+   Models a set of characters that can be rendered to the screen.
+*/
+typedef struct font {
+  sprite_sheet_t* sheet;
+  point_t*        mappings;
+  size_t          mapping_count;
+} font_t;
+
+/**
+   Creates a new font from a texture.
+   
+   @param texture
+     Texture holding the font glyphs.
+   @param width
+     Width of each character in pixels
+   @param height
+     Height of each character in pixels.
+*/
+font_t*
+font_new(texture_t* texture, int width, int height);
+
+/**
+   Cleans up a newly allocated font.
+*/
+void
+font_delete(font_t* font);
+
+/**
+   Renders a character to the screen. 
+*/
+void
+font_render_char(font_t* font, int x, int y, int character, color_t* color);
+
 #endif

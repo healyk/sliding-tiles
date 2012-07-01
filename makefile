@@ -21,7 +21,7 @@ else
 endif
 
 # Files
-SRCS = $(wildcard $(SRCDIR)/**/*.c) $(wildcard $(SRCDIR)/*.c)
+SRCS = $(wildcard $(SRCDIR)/soil/*.c) $(wildcard $(SRCDIR)/*.c)
 OBJS = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS))
 
 # Suffixes

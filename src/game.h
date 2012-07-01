@@ -91,6 +91,7 @@ typedef struct app_data {
   sprite_sheet_t* digits;
   
   texture_t*      hud_words;
+  font_t*         menu_font;
 } app_data_t;
 
 /**

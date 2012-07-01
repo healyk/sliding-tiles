@@ -250,7 +250,7 @@ gfx_draw_rect(rect_t* rect, color_t* color, bool filled) {
 
   {
     glColor4ub(color->red, color->green, color->blue, color->alpha);
-    glVertex2i(rect->x,               rect->y);
+    glVertex2i(rect->x, rect->y);
 
     glColor4ub(color->red, color->green, color->blue, color->alpha);
     glVertex2i(rect->x + rect->width, rect->y);
@@ -259,7 +259,7 @@ gfx_draw_rect(rect_t* rect, color_t* color, bool filled) {
     glVertex2i(rect->x + rect->width, rect->y + rect->height);
 
     glColor4ub(color->red, color->green, color->blue, color->alpha);
-    glVertex2i(rect->x,               rect->y + rect->height);
+    glVertex2i(rect->x, rect->y + rect->height);
   }
 
   glEnd();
@@ -310,4 +310,49 @@ sprite_sheet_get_sprite(sprite_sheet_t* sheet, int x, int y) {
 void
 sprite_render(sprite_t* sprite, rect_t* dest, color_t* color) {
   gfx_blit(sprite->texture, &sprite->area, dest, color);
+}
+
+//==============================================================================
+// Sprites
+//==============================================================================
+
+const int FONT_MAPPING_SIZE = 256;
+
+font_t*
+font_new(texture_t* texture, int width, int height) {
+  font_t* font;
+
+  // In the future custom mapping may be specified
+  font = new(font_t);
+  font->mappings = new_array(point_t, 256);
+  font->mapping_count = FONT_MAPPING_SIZE;
+
+  font->sheet = sprite_sheet_new(texture, width, height);
+
+  // Set up the mappings
+  for(int i = 0; i < font->mapping_count; i++) {
+    point_t* p = font->mappings + i;
+    p->x = i % texture->width;
+    p->y = i / texture->width;
+  }
+
+  return font;
+}
+
+void
+font_delete(font_t* font) {
+  sprite_sheet_delete(font->sheet);
+  delete(font->mappings);
+  delete(font);
+}
+
+void
+font_render_char(font_t* font, int x, int y, int character, color_t* color) {
+  point_t*  p;
+  rect_t    dest = { x, y, 0, 0 };
+  sprite_t* sprite;
+  
+  p = font->mappings + character;
+  sprite = sprite_sheet_get_sprite(font->sheet, p->x, p->y);
+  sprite_render(sprite, &dest, color);
 }
