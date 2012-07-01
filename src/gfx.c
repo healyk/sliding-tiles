@@ -356,3 +356,12 @@ font_render_char(font_t* font, int x, int y, int character, color_t* color) {
   sprite = sprite_sheet_get_sprite(font->sheet, p->x, p->y);
   sprite_render(sprite, &dest, color);
 }
+
+void
+font_render_string(font_t* font, int x, int y, char* str, color_t* color) {
+  size_t len = strlen(str);
+
+  for(int i = 0; i < len; i++, x += font->sheet->sprite_width) {
+    font_render_char(font, x, y, str[i], color);
+  }
+}

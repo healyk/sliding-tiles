@@ -204,4 +204,10 @@ font_delete(font_t* font);
 void
 font_render_char(font_t* font, int x, int y, int character, color_t* color);
 
+/**
+   Renders a string to the screen.
+*/
+void
+font_render_string(font_t* font, int x, int y, char* str, color_t* color);
+
 #endif

@@ -34,7 +34,7 @@ init_game(void) {
     app_data.digits = sprite_sheet_new(digits_texture, 16, 24);
     app_data.hud_words = texture_load("data/hud-words.png", true);
     app_data.menu_font = font_new(texture_load("data/menu-font.png", true),
-                                  24, 24);
+                                  16, 16);
   }
 
   return result;
@@ -49,7 +49,7 @@ main_loop(void) {
   while(running) {
     glClear(GL_COLOR_BUFFER_BIT);
     game_render(&app_data, game);
-    font_render_char(app_data.menu_font, 32, 32, 'a', &test_color);
+    font_render_string(app_data.menu_font, 32, 32, "Hello world", &test_color);
     glfwSwapBuffers();
 
     if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
