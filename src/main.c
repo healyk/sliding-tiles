@@ -5,11 +5,9 @@
 #include "geo.h"
 #include "util.h"
 #include "game.h"
-#include "menu.h"
 
 app_data_t   app_data;
 game_t*      game;
-menu_data_t* menu_data;
 
 bool
 init_game(void) {
@@ -33,8 +31,6 @@ init_game(void) {
     digits_texture = texture_load("data/digits.png", true);
     app_data.digits = sprite_sheet_new(digits_texture, 16, 24);
     app_data.hud_words = texture_load("data/hud-words.png", true);
-    app_data.menu_font = font_new(texture_load("data/menu-font.png", true),
-                                  16, 16);
   }
 
   return result;
@@ -44,12 +40,10 @@ void
 main_loop(void) {
   bool running = true;
   double current_time = 0.0;
-  color_t test_color   = { 255, 0, 0, 255 };
 
   while(running) {
     glClear(GL_COLOR_BUFFER_BIT);
     game_render(&app_data, game);
-    font_render_string(app_data.menu_font, 32, 32, "Hello world", &test_color);
     glfwSwapBuffers();
 
     if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
