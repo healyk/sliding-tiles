@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <string.h>
+
 #include <GL/glfw.h>
 
 #include "gfx.h"
@@ -9,28 +11,50 @@
 app_data_t   app_data;
 game_t*      game;
 
+/**
+   Translates a command-line argument flag to a skill level.
+*/
+skill_level_t
+skill_flag_to_level(int flag) {
+  skill_level_t skill;
+  
+  switch(flag) {
+  case 'e': skill = SKILL_EASY; break;
+  case 'm': skill = SKILL_MEDIUM; break;
+  case 'h': skill = SKILL_HARD; break;
+  default:
+    printf("Unknown skill %c.  Defaulting to easy.\n", flag);
+    skill = SKILL_EASY;
+    break;
+  }
+
+  return skill;
+}
+
 bool
-init_game(void) {
+init_game(char* image_filename, skill_level_t skill) {
   bool result;
   texture_t* digits_texture;
-  texture_t* test_img;
-
+  texture_t* game_image;
+ 
   log_init("game.log");
-  result = gfx_init("Sliding Tile Game", 800, 600);
+  result = gfx_init("Sliding Tile Game", SCREEN_WIDTH, SCREEN_HEIGHT);
 
   if(result) {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     gfx_begin_2d();
-    // Begin test code
-    test_img = texture_load("images/landscape.jpg", true);
 
-    result = test_img != NULL;
-    game = game_new(SKILL_EASY, test_img);
-    // End test code
+    game_image = texture_load(image_filename, true);
+    if(game_image == NULL) {
+      printf("Cannot load image %s\n", image_filename);
+      result = false;
+    } else {
+      game = game_new(skill, game_image);
 
-    digits_texture = texture_load("data/digits.png", true);
-    app_data.digits = sprite_sheet_new(digits_texture, 16, 24);
-    app_data.hud_words = texture_load("data/hud-words.png", true);
+      digits_texture = texture_load("data/digits.png", true);
+      app_data.digits = sprite_sheet_new(digits_texture, 16, 24);
+      app_data.hud_words = texture_load("data/hud-words.png", true);
+    }
   }
 
   return result;
@@ -66,17 +90,58 @@ main_loop(void) {
 
 void
 shutdown_game(void) {
-  game_end(game);
-  sprite_sheet_delete(app_data.digits);
+  if(game != NULL) {
+    game_end(game);
+    sprite_sheet_delete(app_data.digits);
+  }
+
   gfx_end_2d();
   gfx_shutdown();
 }
 
-int main() {
-  if(init_game()) {
-    main_loop();
-    shutdown_game();
+void print_usage() {
+  char* usage =
+    "Sliding Tile Game usage.\n"
+    "slidingtile [options]\n"
+    "\n"
+    "Options:\n"
+    "\t--(s)kill [e|m|h]     Chooses a difficulty.  Easy, Medium and Hard.\n"
+    "\t--(i)mage [filename]  Selects the image to use.\n";
+
+  printf(usage);
+}
+
+int main(int argc, char** argv) {
+  char* img_name = "default.jpg";
+  int   skill_flag = 'e';
+  bool  should_run = true;
+
+  // Process command line args
+  for(int i = 1; i < argc; i++) {
+    if((strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--skill") == 0)
+       && argc >= (i + 1)) 
+    {
+      skill_flag = argv[i + 1][0];
+      i++;
+    }
+
+    else if((strcmp(argv[i], "-i") == 0 || strcmp(argv[i], "--image"))
+            && argc >= (i + 1)) 
+    {
+      img_name = argv[i + 1];
+    }
+
+    else {
+      print_usage();
+      should_run = false;
+    }
   }
+
+  if(should_run && init_game(img_name, skill_flag_to_level(skill_flag))) {
+    main_loop();
+  }
+
+  shutdown_game();
 
   return 0;
 }

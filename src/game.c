@@ -30,7 +30,7 @@ const int SLIDE_VELOCITY = 20;
    Number of times that the board tiles will be moved around before it
    is presented to the player in a new game.
 */
-const int BOARD_RANDOMIZATION_ITERATIONS = 256;
+const int BOARD_RANDOMIZATION_ITERATIONS = 5000;
 
 //==============================================================================
 // Prototypes
@@ -333,7 +333,8 @@ game_on_click(game_t* game, int x, int y) {
   if(game->play_state == PLAY_STATE_WAIT_FOR_INPUT) {
     // Translate the x, y to a tile x, y
     int tile_x = (x / (SCREEN_WIDTH * 1.0f)) * game->skill;
-    int tile_y = (y / (SCREEN_HEIGHT * 1.0f)) * game->skill;
+    int tile_y = ((y - HEIGHT_OFFSET) / 
+                  (SCREEN_HEIGHT - HEIGHT_OFFSET * 1.0f)) * game->skill;
 
     // We must find the adjacent NULL sprite tile.
     point_t adj[4] = {
