@@ -17,9 +17,9 @@ extern const int SCREEN_HEIGHT;
    tiles the board will be cut into.  So for easy, the board will be 3x3.
 */
 typedef enum skill_level {
-  SKILL_EASY = 4,
-  SKILL_MEDIUM = 8,
-  SKILL_HARD = 16
+  SKILL_EASY = 3,
+  SKILL_MEDIUM = 4,
+  SKILL_HARD = 5
 } skill_level_t;
 
 /**
